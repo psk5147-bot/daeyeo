@@ -20,7 +20,7 @@
   --accent:#2563eb;
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow:hidden}
-.app{display:flex;flex-direction:column;height:100vh;height:100svh}
+.app{display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0}
 
 /* 헤더 */
 .header{background:#fff;padding:env(safe-area-inset-top,12px) 16px 0;border-bottom:1px solid var(--border)}
@@ -59,8 +59,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto S
 .empty{text-align:center;padding:3rem 0;color:var(--text3);font-size:14px}
 
 /* 입력 */
-.input-area{background:#fff;border-top:1px solid var(--border);padding:10px 16px;padding-bottom:max(20px,env(safe-area-inset-bottom));flex-shrink:0}
-.inp-row{display:flex;gap:6px;margin-bottom:6px}
+.input-area{background:#fff;border-top:1px solid var(--border);padding:10px 16px;padding-bottom:max(20px,env(safe-area-inset-bottom));flex-shrink:0;overflow:hidden;width:100%;box-sizing:border-box}
+.inp-row{display:flex;gap:6px;margin-bottom:6px;width:100%}
+
 .inp{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none}
 .inp:focus{border-color:var(--blue)}
 .inp::placeholder{color:var(--text3)}
@@ -72,7 +73,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto S
 .type-btn.active-in{background:var(--green-bg);color:var(--green);border-color:var(--green)}
 .type-btn.active-out{background:var(--red-bg);color:var(--red);border-color:var(--red)}
 
-.btn-add{padding:9px 16px;background:var(--blue);border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;color:#fff;font-family:'Noto Sans KR',sans-serif;white-space:nowrap;flex-shrink:0}
+.btn-add{padding:9px 12px;background:var(--blue);border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;color:#fff;font-family:'Noto Sans KR',sans-serif;white-space:nowrap;flex-shrink:0}
 .btn-add:active{opacity:0.85}
 
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;padding:9px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;white-space:nowrap}
@@ -95,7 +96,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto S
       <div class="header-date" id="todayDate"></div>
     </div>
     <div class="tabs">
-      <button class="tab active" onclick="setTab('sangrok')">상록 (동생)</button>
+      <button class="tab active" onclick="setTab('sangrok')">상록</button>
       <button class="tab" onclick="setTab('yangsung')">양성국</button>
     </div>
   </div>
