@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="대여금장부">
+<meta name="theme-color" content="#ffffff">
+<title>대여금장부</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f7f7f7;--bg2:#ffffff;--bg3:#f0f0f0;--border:#e0e0e0;
+  --text:#1a1a1a;--text2:#666;--text3:#aaa;
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue-light:#dbeafe;
+  --red:#dc2626;--red-bg:#fef2f2;
+  --green:#16a34a;--green-bg:#f0fdf4;
+  --accent:#2563eb;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* 헤더 */
+.header{background:#fff;padding:env(safe-area-inset-top,12px) 16px 0;border-bottom:1px solid var(--border)}
+.header-top{display:flex;align-items:center;justify-content:space-between;padding:10px 0 8px}
+.app-title{font-size:20px;font-weight:700;color:var(--text)}
+.header-date{font-size:12px;color:var(--text2)}
+
+/* 탭 */
+.tabs{display:flex;gap:0}
+.tab{flex:1;padding:10px 0;border:none;background:transparent;cursor:pointer;font-size:14px;font-weight:500;color:var(--text3);font-family:'Noto Sans KR',sans-serif;border-bottom:2px solid transparent;transition:all 0.2s}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* 요약 카드 */
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border)}
+.stat{background:var(--bg);border-radius:10px;padding:10px 12px}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:3px}
+.stat-val{font-size:16px;font-weight:700}
+.stat-val.blue{color:var(--blue)}.stat-val.red{color:var(--red)}.stat-val.green{color:var(--green)}
+
+/* 리스트 */
+.list-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg)}
+.list{padding:8px 16px;display:flex;flex-direction:column;gap:6px}
+
+.item{background:#fff;border-radius:10px;padding:11px 14px;border:1px solid var(--border)}
+.item-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.item-desc{font-size:13px;color:var(--text);font-weight:500;flex:1}
+.item-amounts{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
+.item-in{font-size:12px;font-weight:700;color:var(--green)}
+.item-out{font-size:12px;font-weight:700;color:var(--red)}
+.item-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:5px}
+.item-date{font-size:11px;color:var(--text3)}
+.item-balance{font-size:12px;font-weight:700;color:var(--blue)}
+.item-memo{font-size:11px;color:var(--text2);margin-top:3px;font-style:italic}
+.item-del{background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1}
+.item-del:active{color:var(--red)}
+.empty{text-align:center;padding:3rem 0;color:var(--text3);font-size:14px}
+
+/* 입력 */
+.input-area{background:#fff;border-top:1px solid var(--border);padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+.inp-row{display:flex;gap:6px;margin-bottom:6px}
+.inp{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none}
+.inp:focus{border-color:var(--blue)}
+.inp::placeholder{color:var(--text3)}
+.inp-sm{width:80px;flex:none}
+.inp-date{width:85px;flex:none}
+
+.type-btns{display:flex;gap:6px;margin-bottom:6px}
+.type-btn{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;font-size:12px;font-weight:500;font-family:'Noto Sans KR',sans-serif;color:var(--text2);transition:all 0.15s}
+.type-btn.active-in{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.type-btn.active-out{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+
+.btn-add{padding:9px 16px;background:var(--blue);border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;color:#fff;font-family:'Noto Sans KR',sans-serif;white-space:nowrap;flex-shrink:0}
+.btn-add:active{opacity:0.85}
+
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;padding:9px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* 양성국 이자계산 */
+.interest-card{background:#fff;border-radius:10px;padding:12px 14px;border:1px solid var(--border);margin:8px 16px}
+.interest-title{font-size:12px;color:var(--text2);margin-bottom:6px}
+.interest-vals{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.interest-val{background:var(--bg);border-radius:8px;padding:8px 10px}
+.interest-val-label{font-size:10px;color:var(--text3)}
+.interest-val-num{font-size:14px;font-weight:700;color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div class="app-title">대여금 장부</div>
+      <div class="header-date" id="todayDate"></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="setTab('sangrok')">상록 (동생)</button>
+      <button class="tab" onclick="setTab('yangsung')">양성국</button>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="stat">
+      <div class="stat-label">총 빌려준 금액</div>
+      <div class="stat-val red" id="totalOut">-</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">현재 잔액</div>
+      <div class="stat-val blue" id="currentBalance">-</div>
+    </div>
+  </div>
+
+  <div class="list-wrap">
+    <div class="list" id="listEl"></div>
+  </div>
+
+  <div class="input-area">
+    <div class="inp-row">
+      <input class="inp" type="text" id="inpDesc" placeholder="내용 입력">
+      <input class="inp inp-date" type="text" id="inpDate" placeholder="날짜">
+    </div>
+    <div class="type-btns">
+      <button class="type-btn active-in" id="btnIn" onclick="setType('in')">↑ 입금 (받음)</button>
+      <button class="type-btn" id="btnOut" onclick="setType('out')">↓ 출금 (빌려줌)</button>
+    </div>
+    <div class="inp-row">
+      <input class="inp" type="text" inputmode="numeric" id="inpAmt" placeholder="금액" oninput="fmtAmt(this)">
+      <input class="inp inp-sm" type="text" id="inpMemo" placeholder="메모">
+      <button class="btn-add" onclick="addItem()">추가</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+const _fbConfig = {
+  apiKey: "AIzaSyAxzmQDhFSu5sh7mgu37wdIzmwRt7ZnTi8",
+  authDomain: "sugeumdaejang.firebaseapp.com",
+  projectId: "sugeumdaejang",
+  storageBucket: "sugeumdaejang.firebasestorage.app",
+  messagingSenderId: "883862465831",
+  appId: "1:883862465831:web:ed0d835f01669ec4aecd02"
+};
+if (!firebase.apps.length) firebase.initializeApp(_fbConfig);
+const _db = firebase.firestore();
+const _DOC = _db.collection('daeyeo').doc('data');
+
+window.saveToCloud = async function(d) {
+  try {
+    await _DOC.set({
+      sangrok: JSON.stringify(d.sangrok),
+      yangsung: JSON.stringify(d.yangsung),
+      updatedAt: new Date().toISOString()
+    });
+  } catch(e) { console.error('저장실패:', e); }
+};
+
+window.loadFromCloud = async function() {
+  try {
+    const snap = await _DOC.get();
+    if (snap.exists) {
+      const d = snap.data();
+      return {
+        sangrok: JSON.parse(d.sangrok || '[]'),
+        yangsung: JSON.parse(d.yangsung || '[]')
+      };
+    }
+  } catch(e) { console.error('로드실패:', e); }
+  return null;
+};
+
+window.startSync = function(cb) {
+  _DOC.onSnapshot((snap) => {
+    if (snap.exists) {
+      const d = snap.data();
+      cb({
+        sangrok: JSON.parse(d.sangrok || '[]'),
+        yangsung: JSON.parse(d.yangsung || '[]')
+      });
+    }
+  });
+};
+</script>
+
+<script>
+const STORAGE_KEY = 'daeyeo_v1';
+let tab = 'sangrok';
+let inputType = 'in';
+
+// 상록 기존 데이터
+const SANGROK_PRESET = [
+  {date:"2024-01-12",desc:"이월",income:0,expense:10150000,balance:10150000,memo:"하나카드만사용",id:1},
+  {date:"2024-01-21",desc:"",income:0,expense:182000,balance:10332000,memo:"",id:2},
+  {date:"2024-01-06",desc:"",income:0,expense:193700,balance:10525700,memo:"",id:3},
+  {date:"2024-03-19",desc:"",income:0,expense:1400000,balance:11925700,memo:"",id:4},
+  {date:"2024-03-30",desc:"",income:1300000,expense:0,balance:10625700,memo:"",id:5},
+  {date:"2024-04-17",desc:"",income:0,expense:4505905,balance:15131605,memo:"",id:6},
+  {date:"2024-04-30",desc:"",income:200000,expense:0,balance:14931605,memo:"",id:7},
+  {date:"2024-05-20",desc:"현대리볼/현금써비스",income:0,expense:1700000,balance:16631605,memo:"",id:8},
+  {date:"2024-05-23",desc:"",income:0,expense:1000000,balance:17631605,memo:"",id:9},
+  {date:"2024-05-28",desc:"",income:2000000,expense:0,balance:15631605,memo:"",id:10},
+  {date:"2024-05-31",desc:"",income:500000,expense:0,balance:15131605,memo:"",id:11},
+  {date:"2024-06-04",desc:"",income:0,expense:150000,balance:15281605,memo:"",id:12},
+  {date:"2024-07-04",desc:"",income:0,expense:500000,balance:15781605,memo:"월수입 4,000,000",id:13},
+  {date:"2025-01-20",desc:"",income:0,expense:600000,balance:16381605,memo:"",id:14},
+  {date:"2025-02-15",desc:"현대카드",income:0,expense:5374574,balance:21756179,memo:"",id:15},
+  {date:"2025-02-18",desc:"APT대출금외",income:0,expense:1000000,balance:22756179,memo:"",id:16},
+  {date:"2025-02-25",desc:"",income:1000000,expense:0,balance:21756179,memo:"",id:17},
+  {date:"2025-03-13",desc:"",income:0,expense:1476266,balance:23232445,memo:"",id:18},
+  {date:"2025-03-19",desc:"현대리볼/현금써비스",income:0,expense:5056525,balance:28288970,memo:"4/27 100만",id:19},
+  {date:"2025-03-20",desc:"주택금융",income:0,expense:512297,balance:28801267,memo:"",id:20},
+  {date:"2025-03-20",desc:"저축은행(원금이자)",income:0,expense:165773,balance:28967040,memo:"",id:21},
+  {date:"2025-03-21",desc:"우리이자 회비 보험료",income:0,expense:260000,balance:29227040,memo:"월수입 1,000,000",id:22},
+  {date:"2025-03-23",desc:"bc카드리볼빙",income:0,expense:400000,balance:29627040,memo:"5/2 처-500",id:23},
+  {date:"2025-03-29",desc:"대산기계수수료",income:500000,expense:0,balance:29127040,memo:"5/3 400만",id:24},
+  {date:"2025-04-01",desc:"삼성리볼/현금써비스",income:0,expense:3420000,balance:32547040,memo:"",id:25},
+  {date:"2025-04-05",desc:"웰스2건190만TMS 50만",income:2400000,expense:0,balance:30147040,memo:"",id:26},
+  {date:"2025-04-06",desc:"우리보증료",income:0,expense:350000,balance:30497040,memo:"",id:27},
+  {date:"2025-04-06",desc:"웰스밀링수수료",income:350000,expense:0,balance:30147040,memo:"",id:28},
+  {date:"2025-04-14",desc:"현대리볼/현금써비스",income:0,expense:2320000,balance:32467040,memo:"",id:29},
+  {date:"2025-04-17",desc:"A저축대출/소상공/보험",income:0,expense:950000,balance:33417040,memo:"",id:30},
+  {date:"2025-04-19",desc:"회비",income:0,expense:200000,balance:33617040,memo:"월수입 3,250,000",id:31},
+  {date:"2025-04-24",desc:"bc리볼빙/회비",income:0,expense:410703,balance:34027743,memo:"",id:32},
+  {date:"2025-04-26",desc:"용돈",income:0,expense:300000,balance:34327743,memo:"",id:33},
+  {date:"2025-04-27",desc:"판매수수료(형록+강대웅)",income:1500000,expense:0,balance:32827743,memo:"",id:34},
+  {date:"2025-04-27",desc:"임대료(강대웅)",income:175000,expense:0,balance:32652743,memo:"",id:35},
+  {date:"2025-05-03",desc:"삼성리볼",income:0,expense:314000,balance:32966743,memo:"",id:36},
+  {date:"2025-05-04",desc:"현대정밀CNC판매수수료",income:553000,expense:0,balance:32413743,memo:"",id:37},
+  {date:"2025-05-05",desc:"HIM수수료",income:3850000,expense:0,balance:28563743,memo:"",id:38},
+  {date:"2025-05-14",desc:"하나카드입금",income:0,expense:200000,balance:28763743,memo:"",id:39},
+  {date:"2025-05-16",desc:"현대카드리볼빙외",income:0,expense:800000,balance:29563743,memo:"",id:40},
+  {date:"2025-05-18",desc:"주택금융외",income:0,expense:533000,balance:30096743,memo:"",id:41},
+  {date:"2025-05-20",desc:"IBK 대출상환 회비",income:0,expense:375000,balance:30471743,memo:"월수입 6,078,000",id:42},
+  {date:"2025-05-24",desc:"BC바로카드",income:0,expense:308000,balance:30779743,memo:"",id:43},
+  {date:"2025-05-28",desc:"개인사용",income:0,expense:300000,balance:31079743,memo:"",id:44},
+  {date:"2025-05-29",desc:"임대료",income:52500,expense:0,balance:31027243,memo:"",id:45},
+  {date:"2025-05-28",desc:"온천표(5만원지원)",income:0,expense:180000,balance:31207243,memo:"",id:46},
+  {date:"2025-06-01",desc:"JK테크",income:1246000,expense:0,balance:29961243,memo:"",id:47},
+  {date:"2025-06-02",desc:"삼성리볼",income:0,expense:320500,balance:30281743,memo:"",id:48},
+  {date:"2025-06-03",desc:"강대웅(엄마20만지급)",income:1550000,expense:0,balance:28731743,memo:"",id:49},
+  {date:"2025-06-05",desc:"현대실손10만/개인50만",income:0,expense:600000,balance:29331743,memo:"",id:50},
+  {date:"2025-06-06",desc:"효성(엄마10만지급)",income:2285000,expense:0,balance:27046743,memo:"",id:51},
+  {date:"2025-06-12",desc:"하나카드사용6월",income:0,expense:805000,balance:27851743,memo:"",id:52},
+  {date:"2025-06-13",desc:"와글미디어",income:0,expense:300000,balance:28151743,memo:"",id:53},
+  {date:"2025-06-14",desc:"현대카드리볼빙외",income:0,expense:716745,balance:28868488,memo:"",id:54},
+  {date:"2025-06-15",desc:"보험료",income:0,expense:150000,balance:29018488,memo:"",id:55},
+  {date:"2025-06-16",desc:"주택금융",income:0,expense:510000,balance:29528488,memo:"",id:56},
+  {date:"2025-06-17",desc:"IBK 대출상환(원금?)",income:0,expense:160000,balance:29688488,memo:"",id:57},
+  {date:"2025-06-18",desc:"신보대출이자(원금25,)",income:0,expense:150000,balance:29838488,memo:"삼성/현대/BC계750만",id:58},
+  {date:"2025-06-22",desc:"급여이체",income:1200000,expense:0,balance:28638488,memo:"월수입 6,333,500 하나카드만사용",id:59},
+  {date:"2025-06-23",desc:"BC바로리볼빙후(2,174,532)",income:0,expense:290915,balance:28929403,memo:"",id:60},
+  {date:"2025-06-23",desc:"돐20 회비5 개인20",income:0,expense:450000,balance:29379403,memo:"",id:61},
+  {date:"2025-06-25",desc:"식대송금",income:0,expense:50000,balance:29429403,memo:"",id:62},
+  {date:"2025-07-03",desc:"솔리드(엄마10만지급)",income:1057500,expense:0,balance:28371903,memo:"",id:63},
+  {date:"2025-07-03",desc:"삼성리볼빙후(2,215,880)",income:0,expense:286641,balance:28658544,memo:"",id:64},
+  {date:"2025-07-04",desc:"개인사용",income:0,expense:300000,balance:28958544,memo:"",id:65},
+  {date:"2025-07-10",desc:"APT세입금",income:900000,expense:0,balance:28058544,memo:"",id:66},
+  {date:"2025-07-10",desc:"현대차할부",income:0,expense:740000,balance:28798544,memo:"",id:67},
+  {date:"2025-07-12",desc:"하나카드7월(일시64만/할부26)",income:0,expense:906052,balance:29704596,memo:"",id:68},
+  {date:"2025-07-18",desc:"IBK대출상환(원금606만)8.9%",income:0,expense:160000,balance:29864596,memo:"",id:69},
+  {date:"2025-07-18",desc:"주택금융",income:0,expense:512000,balance:30376596,memo:"",id:70},
+  {date:"2025-07-18",desc:"현대카드리볼빙외",income:0,expense:762500,balance:31139096,memo:"",id:71},
+  {date:"2025-07-20",desc:"정부환급금",income:1400000,expense:0,balance:29739096,memo:"",id:72},
+  {date:"2025-07-20",desc:"부의20.회비10.기타20",income:0,expense:500000,balance:30239096,memo:"",id:73},
+  {date:"2025-07-21",desc:"급여90/삼성코닝50",income:1400000,expense:0,balance:28839096,memo:"월수입 4,757,500",id:74},
+  {date:"2025-07-24",desc:"서경정공",income:490000,expense:0,balance:28349096,memo:"",id:75},
+  {date:"2025-07-24",desc:"우리대출13만/BC카드289,313",income:0,expense:480000,balance:28829096,memo:"",id:76},
+  {date:"2025-08-03",desc:"삼성리볼빙후(2,206,380)",income:0,expense:282000,balance:29111096,memo:"",id:77},
+  {date:"2025-08-08",desc:"APT세입금",income:900000,expense:0,balance:28211096,memo:"",id:78},
+  {date:"2025-08-10",desc:"현대차할부",income:0,expense:737500,balance:28948596,memo:"",id:79},
+  {date:"2025-08-11",desc:"개인사용",income:0,expense:200000,balance:29148596,memo:"",id:80},
+  {date:"2025-08-12",desc:"이엠비(85만)강대웅(85-10엄마)",income:1600000,expense:0,balance:27548596,memo:"",id:81},
+  {date:"2025-08-14",desc:"더빌트459,000*2강대웅",income:918000,expense:0,balance:26630596,memo:"",id:82},
+  {date:"2025-08-16",desc:"현대카드",income:0,expense:808500,balance:27439096,memo:"",id:83},
+  {date:"2025-08-16",desc:"하나카드8월(일시/할부)",income:0,expense:1016500,balance:28455596,memo:"",id:84},
+  {date:"2025-08-19",desc:"오아시스 펄/회비40만",income:0,expense:473000,balance:28928596,memo:"",id:85},
+  {date:"2025-08-19",desc:"IBK대출상환(원금)8.9%",income:0,expense:161388,balance:29089984,memo:"",id:86},
+  {date:"2025-08-19",desc:"주택금융",income:0,expense:511691,balance:29601675,memo:"",id:87},
+  {date:"2025-08-22",desc:"급여120만/삼성코닝50만",income:1700000,expense:0,balance:27901675,memo:"월수입 5,608,000",id:88},
+  {date:"2025-08-24",desc:"추석준비(형록20,상록10만)",income:0,expense:100000,balance:28001675,memo:"",id:89},
+  {date:"2025-08-25",desc:"BC카드1,754천+개인",income:0,expense:600000,balance:28601675,memo:"",id:90},
+  {date:"2025-09-04",desc:"삼성리볼빙후(2,225.933)",income:0,expense:247656,balance:28849331,memo:"",id:91},
+  {date:"2025-09-06",desc:"대현중기(64만-20 아빠)",income:440000,expense:0,balance:28409331,memo:"",id:92},
+  {date:"2025-09-08",desc:"APT세입금",income:900000,expense:0,balance:27509331,memo:"",id:93},
+  {date:"2025-09-10",desc:"현대차할부",income:0,expense:737500,balance:28246831,memo:"",id:94},
+  {date:"2025-09-12",desc:"하나카드",income:0,expense:759964,balance:29169295,memo:"",id:95},
+  {date:"2025-09-12",desc:"부의금10 기타2",income:0,expense:120000,balance:29289295,memo:"",id:96},
+  {date:"2025-09-14",desc:"청운하이텍(강45+형45)",income:900000,expense:0,balance:28389295,memo:"",id:97},
+  {date:"2025-09-17",desc:"현대카드(납입후원금?)",income:0,expense:610876,balance:29000171,memo:"",id:98},
+  {date:"2025-09-19",desc:"IBK대출상환(납입후원금?)8.9%",income:0,expense:159097,balance:29159268,memo:"",id:99},
+  {date:"2025-09-19",desc:"주택금융",income:0,expense:512100,balance:29671368,memo:"",id:100},
+  {date:"2025-09-23",desc:"보험료",income:0,expense:60000,balance:29731368,memo:"",id:101},
+  {date:"2025-09-23",desc:"급료10월",income:1200000,expense:0,balance:28531368,memo:"월수입 3,440,000",id:102},
+  {date:"2025-09-26",desc:"BC카드(잔액157만)+회비",income:0,expense:300000,balance:28831368,memo:"11/15 월세보증금상환(2천만)",id:103},
+  {date:"2025-09-29",desc:"우리대출13만 외",income:0,expense:150000,balance:28981368,memo:"",id:104},
+  {date:"2025-09-29",desc:"TMS 수수료",income:1400000,expense:0,balance:27581368,memo:"",id:105},
+  {date:"2025-10-01",desc:"도배30만 기타20만",income:0,expense:500000,balance:28081368,memo:"",id:106},
+  {date:"2025-10-06",desc:"삼성리볼빙후(2,087,400)",income:0,expense:268613,balance:28349981,memo:"",id:107},
+  {date:"2025-10-06",desc:"수선충당/개인(45만/15만)",income:0,expense:600000,balance:28949981,memo:"",id:108},
+  {date:"2025-10-14",desc:"칩콘베어(20만+기타10만)",income:300000,expense:0,balance:28649981,memo:"",id:109},
+  {date:"2025-10-14",desc:"하나카드(일시813,500/할부301,500)",income:0,expense:1120000,balance:29769981,memo:"",id:110},
+  {date:"2025-10-18",desc:"현대카드/주택금융/IBK/월세-90만",income:0,expense:2250000,balance:32019981,memo:"",id:111},
+  {date:"2025-10-20",desc:"모임회비외",income:0,expense:300000,balance:32319981,memo:"",id:112},
+  {date:"2025-10-21",desc:"11월급여+트렌스판매8만",income:1280000,expense:0,balance:31039981,memo:"월수입 2,980,000",id:113},
+  {date:"2025-10-24",desc:"보험료(교보/현대)",income:0,expense:170000,balance:31209981,memo:"",id:114},
+  {date:"2025-10-24",desc:"우리대출13만/BC카드226,600",income:0,expense:360000,balance:31569981,memo:"",id:115},
+  {date:"2025-10-25",desc:"바이스(테란150,000+상록100,000)",income:250000,expense:0,balance:31319981,memo:"",id:116},
+  {date:"2025-10-31",desc:"네오테크선반",income:300000,expense:0,balance:31019981,memo:"",id:117},
+  {date:"2025-11-04",desc:"한백CNC밀링",income:1000000,expense:0,balance:30019981,memo:"",id:118},
+  {date:"2025-11-04",desc:"삼성리볼빙후(1,872,400)",income:0,expense:249019,balance:30269000,memo:"",id:119},
+  {date:"2025-11-04",desc:"회비외",income:0,expense:100000,balance:30369000,memo:"",id:120},
+  {date:"2025-11-05",desc:"모임후뒷풀이",income:0,expense:200000,balance:30569000,memo:"",id:121},
+  {date:"2025-11-10",desc:"현대차할부",income:0,expense:740000,balance:31309000,memo:"",id:122},
+  {date:"2025-11-13",desc:"개별모임4인+S화재2건98천",income:0,expense:300000,balance:31609000,memo:"",id:123},
+  {date:"2025-11-17",desc:"하나1,423천(현대623천/잔액155만)외",income:0,expense:2175000,balance:33784000,memo:"",id:124},
+  {date:"2025-11-21",desc:"주택513천/IBK16만/교보62천/개인20만",income:0,expense:928000,balance:34712000,memo:"",id:125},
+  {date:"2025-11-23",desc:"12월급여",income:1200000,expense:0,balance:33512000,memo:"월수입 2,750,000 1/1상록직영/천만원대출",id:126},
+  {date:"2025-12-28",desc:"BC카드외/돐",income:0,expense:455000,balance:33967000,memo:"",id:127},
+  {date:"2026-01-01",desc:"모임(BC카드잔액140만)",income:0,expense:300000,balance:34267000,memo:"",id:128},
+  {date:"2026-01-02",desc:"방충망선금(5/22만)",income:0,expense:50000,balance:34317000,memo:"",id:129},
+  {date:"2026-01-05",desc:"방충망잔금(17만)이중지급",income:0,expense:170000,balance:34487000,memo:"",id:130},
+  {date:"2026-01-05",desc:"삼성325천잔액169만/방충17만/12@관리비198천",income:0,expense:700000,balance:35187000,memo:"",id:131},
+  {date:"2026-01-06",desc:"방충망잔금(17만)이중지급/환입",income:170000,expense:0,balance:35017000,memo:"",id:132},
+  {date:"2026-01-07",desc:"APT월세입금",income:800000,expense:0,balance:34217000,memo:"1/15 월세보증금입금(3천만)",id:133},
+  {date:"2026-01-07",desc:"바이스매각(소울텍)",income:350000,expense:0,balance:33867000,memo:"",id:134},
+  {date:"2026-01-07",desc:"APT월세 복비",income:0,expense:330000,balance:34197000,memo:"",id:135},
+  {date:"2026-01-08",desc:"프러스텍크(강대웅)",income:350000,expense:0,balance:33847000,memo:"",id:136},
+  {date:"2026-01-09",desc:"개별모임",income:0,expense:500000,balance:34347000,memo:"",id:137},
+  {date:"2026-01-12",desc:"개별모임입금 27만/3",income:89000,expense:0,balance:34258000,memo:"",id:138},
+  {date:"2026-01-18",desc:"우리카드결제",income:0,expense:396900,balance:34654900,memo:"",id:139},
+  {date:"2026-01-22",desc:"남부밀링판매",income:365000,expense:0,balance:34289900,memo:"",id:140},
+  {date:"2026-01-23",desc:"1월급여",income:1200000,expense:0,balance:33089900,memo:"월수입 3,324,000",id:141},
+  {date:"2026-01-03",desc:"상록직영대출(카드리볼빙상환)",income:0,expense:10000000,balance:43089900,memo:"",id:142},
+  {date:"2026-01-34",desc:"모임회비외",income:0,expense:500000,balance:43589900,memo:"",id:143},
+  {date:"2026-01-34",desc:"1/10 GTS1,022,000/에이원1,722,000",income:2103000,expense:0,balance:41486900,memo:"",id:144},
+  {date:"2026-01-35",desc:"디떠블유수수료",income:1000000,expense:0,balance:40486900,memo:"",id:145},
+  {date:"2026-01-36",desc:"엄마명절준비",income:0,expense:100000,balance:40586900,memo:"",id:146},
+  {date:"2026-01-40",desc:"APT월세입금",income:800000,expense:0,balance:39786900,memo:"",id:147},
+  {date:"2026-01-43",desc:"차할부738천/하나카일29만할29만",income:0,expense:1320000,balance:41106900,memo:"",id:148},
+  {date:"2026-01-49",desc:"우리카드결재",income:0,expense:873000,balance:41979900,memo:"2/23 IBK저축대출원금540만 외",id:149},
+  {date:"2026-01-49",desc:"홍성형제정밀(밀링)수수료",income:500000,expense:0,balance:41479900,memo:"2/23 bc바로카드(일시.할부)",id:150},
+  {date:"2026-02-20",desc:"2월급여",income:1200000,expense:0,balance:40279900,memo:"월수입 5,603,000",id:151},
+  {date:"2026-03-01",desc:"주택512/소상공130/교보~회비131",income:0,expense:773000,balance:41052900,memo:"",id:152},
+  {date:"2026-02-23",desc:"삼성카드3.5/면도기수리3.0",income:0,expense:65000,balance:41117900,memo:"",id:153},
+  {date:"2026-03-07",desc:"APT월세입금",income:800000,expense:0,balance:40317900,memo:"",id:154},
+  {date:"2026-03-07",desc:"현대차할부",income:0,expense:750000,balance:41067900,memo:"",id:155},
+  {date:"2026-03-10",desc:"개별모임/삼성보험료50",income:0,expense:550000,balance:41617900,memo:"",id:156},
+  {date:"2026-03-16",desc:"주택512/현대카드37/교보62/모생신50",income:0,expense:670000,balance:42287900,memo:"",id:157},
+  {date:"2026-03-16",desc:"우리카드(2.12~3.11)",income:0,expense:424160,balance:42712060,memo:"",id:158},
+  {date:"2026-03-21",desc:"2월급여/코닝정밀100만",income:2200000,expense:0,balance:40512060,memo:"월수입 3,000,000",id:159},
+  {date:"2026-03-23",desc:"bc카드12만/소상대출13만/회비외45만",income:0,expense:700000,balance:41212060,memo:"",id:160},
+  {date:"2026-03-30",desc:"소상공보증35만/단속벌금3건10만",income:0,expense:450000,balance:41662060,memo:"",id:161},
+  {date:"2026-04-04",desc:"멍텅구리밀링매입판매(BJKorea)",income:1600000,expense:0,balance:40062060,memo:"",id:162},
+  {date:"2026-04-05",desc:"삼성카드",income:0,expense:143000,balance:40205060,memo:"",id:163},
+  {date:"2026-04-06",desc:"APT월세입금",income:800000,expense:0,balance:39405060,memo:"",id:164},
+  {date:"2026-04-07",desc:"현대차할부",income:0,expense:740000,balance:40145060,memo:"",id:165},
+  {date:"2026-04-13",desc:"하나카드통신요금9.3만외",income:0,expense:132000,balance:40277060,memo:"",id:166},
+  {date:"2026-04-13",desc:"우리카드",income:0,expense:384900,balance:40661960,memo:"",id:167},
+];
+
+// 양성국 기존 데이터 (주요 항목만, 이자계산 복잡해서 잔액 기준)
+const YANGSUNG_PRESET = [
+  {date:"2009-04-09",desc:"법원판결",income:0,expense:49603000,balance:49603000,memo:"법원판결 원금",id:1},
+  {date:"2009-10-15",desc:"입금",income:7000000,expense:0,balance:50043000,memo:"이자포함",id:2},
+  {date:"2009-12-15",desc:"입금",income:2603000,expense:0,balance:49920000,memo:"이자포함",id:3},
+  {date:"2010-08-13",desc:"입금",income:2000000,expense:0,balance:57840000,memo:"이자포함",id:4},
+  {date:"2010-09-17",desc:"입금",income:1000000,expense:0,balance:58080000,memo:"이자포함",id:5},
+  {date:"2011-01-28",desc:"입금",income:1000000,expense:0,balance:62040000,memo:"이자포함",id:6},
+  {date:"2011-03-15",desc:"입금",income:1000000,expense:0,balance:63520000,memo:"이자포함",id:7},
+  {date:"2011-07-15",desc:"입금",income:1500000,expense:0,balance:66980000,memo:"이자포함",id:8},
+  {date:"2012-01-30",desc:"입금",income:1500000,expense:0,balance:83193107,memo:"이자포함",id:9},
+  {date:"2012-02-03",desc:"입금",income:500000,expense:0,balance:84772934,memo:"이자포함",id:10},
+  {date:"2012-03-05",desc:"입금",income:1400000,expense:0,balance:85492258,memo:"이자포함",id:11},
+  {date:"2012-04-15",desc:"입금",income:1500000,expense:0,balance:86129564,memo:"이자포함",id:12},
+  {date:"2012-06-15",desc:"입금",income:700000,expense:0,balance:89789873,memo:"이자포함",id:13},
+  {date:"2013-02-09",desc:"입금",income:500000,expense:0,balance:108900242,memo:"이자포함",id:14},
+  {date:"2013-05-31",desc:"입금",income:800000,expense:0,balance:116473649,memo:"이자포함",id:15},
+  {date:"2013-12-02",desc:"입금",income:2000000,expense:0,balance:128884447,memo:"이자포함",id:16},
+  {date:"2014-11-20",desc:"입금",income:1500000,expense:0,balance:81500000,memo:"",id:17},
+  {date:"2015-01-30",desc:"입금",income:1500000,expense:0,balance:82360000,memo:"이자 1,240,000",id:18},
+  {date:"2015-02-28",desc:"입금",income:1500000,expense:0,balance:82100000,memo:"이자 1,240,000",id:19},
+  {date:"2015-04-20",desc:"입금",income:2000000,expense:0,balance:81580000,memo:"이자 1,240,000",id:20},
+  {date:"2018-05-01",desc:"이자",income:0,expense:1240000,balance:83460000,memo:"이자만",id:21},
+  {date:"2023-11-04",desc:"현재기준잔액",income:0,expense:0,balance:83460000,memo:"2023.11.04 기준",id:22},
+];
+
+let data = { sangrok: [], yangsung: [] };
+let inputTypeState = 'out';
+
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('ko-KR');
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      if (p.sangrok && p.sangrok.length > 0) data.sangrok = p.sangrok;
+      else data.sangrok = SANGROK_PRESET;
+      if (p.yangsung && p.yangsung.length > 0) data.yangsung = p.yangsung;
+      else data.yangsung = YANGSUNG_PRESET;
+    } else {
+      data.sangrok = SANGROK_PRESET;
+      data.yangsung = YANGSUNG_PRESET;
+    }
+  } catch(e) {
+    data.sangrok = SANGROK_PRESET;
+    data.yangsung = YANGSUNG_PRESET;
+  }
+  setTodayDate();
+  render();
+
+  setTimeout(async () => {
+    try {
+      const cd = await window.loadFromCloud();
+      if (cd && (cd.sangrok.length > 0 || cd.yangsung.length > 0)) {
+        data = cd;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        render();
+        toast('☁️ 동기화 완료');
+      }
+    } catch(e) {}
+    window.startSync((cd) => {
+      data = cd;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      render();
+      toast('☁️ 업데이트됨');
+    });
+  }, 1000);
+}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+  if (window.saveToCloud) window.saveToCloud(data);
+}
+
+function setTodayDate() {
+  const d = new Date();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  document.getElementById('inpDate').value = d.getFullYear()+'-'+mm+'-'+dd;
+}
+
+function setTab(t) {
+  tab = t;
+  document.querySelectorAll('.tab').forEach((el,i) => {
+    el.classList.toggle('active', ['sangrok','yangsung'][i] === t);
+  });
+  render();
+}
+
+function setType(t) {
+  inputTypeState = t;
+  document.getElementById('btnIn').className = 'type-btn' + (t==='in'?' active-in':'');
+  document.getElementById('btnOut').className = 'type-btn' + (t==='out'?' active-out':'');
+}
+
+function fmt(n) { return Number(n).toLocaleString('ko-KR')+'원'; }
+function fmtAmt(el) {
+  let raw = el.value.replace(/,/g,'').replace(/[^0-9]/g,'');
+  if (raw) el.value = Number(raw).toLocaleString('ko-KR');
+  else el.value = '';
+}
+
+function render() {
+  const items = [...data[tab]].sort((a,b) => {
+    if (a.date < b.date) return -1;
+    if (a.date > b.date) return 1;
+    return (a.id||0) - (b.id||0);
+  });
+
+  // 통계
+  const totalOut = data[tab].reduce((s,it) => s + Number(it.expense), 0);
+  const lastBalance = items.length > 0 ? Number(items[items.length-1].balance) : 0;
+  document.getElementById('totalOut').textContent = fmt(totalOut);
+  document.getElementById('currentBalance').textContent = fmt(lastBalance);
+
+  const el = document.getElementById('listEl');
+  if (!items.length) { el.innerHTML = '<div class="empty">내역이 없습니다</div>'; return; }
+
+  el.innerHTML = items.map(it => {
+    const ri = data[tab].findIndex(x => x.id === it.id);
+    return `<div class="item">
+      <div class="item-top">
+        <div class="item-desc">${it.desc || '(내용없음)'}</div>
+        <div class="item-amounts">
+          ${it.income > 0 ? `<span class="item-in">+${fmt(it.income)}</span>` : ''}
+          ${it.expense > 0 ? `<span class="item-out">-${fmt(it.expense)}</span>` : ''}
+        </div>
+      </div>
+      ${it.memo ? `<div class="item-memo">${it.memo}</div>` : ''}
+      <div class="item-bottom">
+        <span class="item-date">${it.date || ''}</span>
+        <span class="item-balance">잔액 ${fmt(it.balance)}</span>
+        <button class="item-del" onclick="del(${ri})">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addItem() {
+  const desc = document.getElementById('inpDesc').value.trim();
+  const date = document.getElementById('inpDate').value.trim();
+  const amtRaw = document.getElementById('inpAmt').value.replace(/,/g,'').trim();
+  const memo = document.getElementById('inpMemo').value.trim();
+  if (!amtRaw) { toast('금액을 입력해주세요'); return; }
+  const amt = Number(amtRaw);
+
+  const items = [...data[tab]].sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  const lastBalance = items.length > 0 ? Number(items[items.length-1].balance) : 0;
+  const newBalance = inputTypeState === 'in' ? lastBalance - amt : lastBalance + amt;
+
+  const newItem = {
+    date, desc,
+    income: inputTypeState === 'in' ? amt : 0,
+    expense: inputTypeState === 'out' ? amt : 0,
+    balance: newBalance,
+    memo,
+    id: Date.now()
+  };
+  data[tab].push(newItem);
+  save(); render();
+  document.getElementById('inpDesc').value = '';
+  document.getElementById('inpAmt').value = '';
+  document.getElementById('inpMemo').value = '';
+  toast('추가됐어요!');
+}
+
+function del(i) {
+  const pw = prompt('삭제 비밀번호:');
+  if (pw === null) return;
+  if (pw !== '5143') { toast('비밀번호가 틀렸어요'); return; }
+  if (!confirm('정말 삭제할까요?')) return;
+  data[tab].splice(i, 1);
+  save(); render();
+  toast('삭제됐어요');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+document.getElementById('inpMemo').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addItem();
+});
+
+// 기본값 출금으로
+setType('out');
+load();
+</script>
+</body>
+</html>
