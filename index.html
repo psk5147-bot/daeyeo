@@ -93,7 +93,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto S
   <div class="header">
     <div class="header-top">
       <div class="app-title">대여금 장부</div>
-      <div class="header-date" id="todayDate"></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="backupData()" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-family:'Noto Sans KR',sans-serif;color:var(--text2)">💾 백업</button>
+        <button onclick="restoreData()" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-family:'Noto Sans KR',sans-serif;color:var(--text2)">📂 복원</button>
+        <div class="header-date" id="todayDate"></div>
+      </div>
     </div>
     <div class="tabs">
       <button class="tab active" onclick="setTab('sangrok')">상록</button>
@@ -416,7 +420,7 @@ function load() {
   setTimeout(async () => {
     try {
       const cd = await window.loadFromCloud();
-      if (cd && (cd.sangrok.length > 0 || cd.yangsung.length > 0)) {
+      if (cd) {
         data = cd;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         render();
@@ -429,7 +433,7 @@ function load() {
       render();
       toast('☁️ 업데이트됨');
     });
-  }, 1000);
+  }, 500);
 }
 
 function save() {
@@ -532,11 +536,49 @@ function addItem() {
 function del(i) {
   const pw = prompt('삭제 비밀번호:');
   if (pw === null) return;
-  if (pw !== '5143') { toast('비밀번호가 틀렸어요'); return; }
+  if (pw !== '0115') { toast('비밀번호가 틀렸어요'); return; }
   if (!confirm('정말 삭제할까요?')) return;
   data[tab].splice(i, 1);
   save(); render();
   toast('삭제됐어요');
+}
+
+function backupData() {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date();
+  const dateStr = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  a.href = url;
+  a.download = '대여금장부_백업_' + dateStr + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('💾 백업 파일 저장됐어요!');
+}
+
+function restoreData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const pw = prompt('복원 비밀번호:');
+    if (pw !== '0115') { toast('비밀번호가 틀렸어요'); return; }
+    const text = await file.text();
+    try {
+      const parsed = JSON.parse(text);
+      if (!parsed.sangrok || !parsed.yangsung) throw new Error();
+      data = parsed;
+      save();
+      render();
+      toast('📂 복원 완료!');
+    } catch(e) {
+      toast('올바른 백업 파일이 아니에요');
+    }
+  };
+  input.click();
 }
 
 function toast(msg) {
