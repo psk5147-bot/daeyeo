@@ -123,7 +123,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto S
   <div class="input-area">
     <div class="inp-row">
       <input class="inp" type="text" id="inpDesc" placeholder="내용 입력" style="flex:2">
-      <input class="inp" type="text" id="inpDate" placeholder="날짜" style="flex:1;min-width:0">
+      <input class="inp" type="date" id="inpDate" style="flex:1;min-width:0;color:var(--text)">
     </div>
     <div class="type-btns">
       <button class="type-btn active-in" id="btnIn" onclick="setType('in')">↑ 입금 (받음)</button>
@@ -471,9 +471,9 @@ function fmtAmt(el) {
 
 function render() {
   const items = [...data[tab]].sort((a,b) => {
-    if (a.date < b.date) return -1;
-    if (a.date > b.date) return 1;
-    return (a.id||0) - (b.id||0);
+    if (a.date > b.date) return -1;
+    if (a.date < b.date) return 1;
+    return (b.id||0) - (a.id||0);
   });
 
   // 통계
@@ -510,27 +510,40 @@ function addItem() {
   const date = document.getElementById('inpDate').value.trim();
   const amtRaw = document.getElementById('inpAmt').value.replace(/,/g,'').trim();
   const memo = document.getElementById('inpMemo').value.trim();
+  if (!date) { toast('날짜를 입력해주세요'); return; }
   if (!amtRaw) { toast('금액을 입력해주세요'); return; }
   const amt = Number(amtRaw);
-
-  const items = [...data[tab]].sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-  const lastBalance = items.length > 0 ? Number(items[items.length-1].balance) : 0;
-  const newBalance = inputTypeState === 'in' ? lastBalance - amt : lastBalance + amt;
 
   const newItem = {
     date, desc,
     income: inputTypeState === 'in' ? amt : 0,
     expense: inputTypeState === 'out' ? amt : 0,
-    balance: newBalance,
+    balance: 0,
     memo,
     id: Date.now()
   };
   data[tab].push(newItem);
+  recalcBalances();
   save(); render();
   document.getElementById('inpDesc').value = '';
   document.getElementById('inpAmt').value = '';
   document.getElementById('inpMemo').value = '';
+  setTodayDate();
   toast('추가됐어요!');
+}
+
+function recalcBalances() {
+  const sorted = [...data[tab]].sort((a,b) => {
+    if (a.date < b.date) return -1;
+    if (a.date > b.date) return 1;
+    return (a.id||0) - (b.id||0);
+  });
+  let bal = 0;
+  sorted.forEach(it => {
+    bal = bal + Number(it.expense) - Number(it.income);
+    const orig = data[tab].find(x => x.id === it.id);
+    if (orig) orig.balance = bal;
+  });
 }
 
 function del(i) {
@@ -539,6 +552,7 @@ function del(i) {
   if (pw !== '0115') { toast('비밀번호가 틀렸어요'); return; }
   if (!confirm('정말 삭제할까요?')) return;
   data[tab].splice(i, 1);
+  recalcBalances();
   save(); render();
   toast('삭제됐어요');
 }
