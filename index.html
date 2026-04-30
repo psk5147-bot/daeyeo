@@ -464,7 +464,7 @@ function addItem() {
 
 function renderMonthly() {
   const monthly = {};
-  data.sangrok.forEach(it => {
+  data.sangrok.forEach(function(it) {
     const ym = it.date ? it.date.substring(0,7) : '기타';
     if (!monthly[ym]) monthly[ym] = {income:0, expense:0};
     monthly[ym].income += Number(it.income)||0;
@@ -475,39 +475,37 @@ function renderMonthly() {
   if (!keys.length) { el.innerHTML = '<div class="empty">내역이 없습니다</div>'; return; }
 
   let totalIncome = 0, totalExpense = 0;
-  keys.forEach(k => { totalIncome += monthly[k].income; totalExpense += monthly[k].expense; });
+  keys.forEach(function(k) { totalIncome += monthly[k].income; totalExpense += monthly[k].expense; });
 
-  el.innerHTML = `
-    <div style="background:#fff;border-radius:10px;padding:14px;margin-bottom:8px;border:1px solid var(--border)">
-      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">📊 전체 합계</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div style="background:var(--green-bg);border-radius:8px;padding:10px">
-          <div style="font-size:11px;color:var(--text2);margin-bottom:3px">총 받은 돈</div>
-          <div style="font-size:15px;font-weight:700;color:var(--green)">+${fmt(totalIncome)}</div>
-        </div>
-        <div style="background:var(--red-bg);border-radius:8px;padding:10px">
-          <div style="font-size:11px;color:var(--text2);margin-bottom:3px">총 빌려준 돈</div>
-          <div style="font-size:15px;font-weight:700;color:var(--red)">-${fmt(totalExpense)}</div>
-        </div>
-      </div>
-    </div>
-    <div style="background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--border)">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--bg3);padding:10px 14px;font-size:12px;font-weight:700;color:var(--text2)">
-        <div>월</div><div style="text-align:right;color:var(--green)">받은 돈</div><div style="text-align:right;color:var(--red)">빌려준 돈</div>
-      </div>
-      ${keys.map((k,i) => `
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:10px 14px;font-size:12px;border-top:1px solid var(--border);background:${i%2===0?'#fff':'var(--bg)'}">
-          <div style="font-weight:600;color:var(--text)">${k}</div>
-          <div style="text-align:right;color:${monthly[k].income>0?'var(--green)':'var(--text3)'}">
-            ${monthly[k].income > 0 ? '+'+fmt(monthly[k].income) : '-'}
-          </div>
-          <div style="text-align:right;color:${monthly[k].expense>0?'var(--red)':'var(--text3)'}">
-            ${monthly[k].expense > 0 ? '-'+fmt(monthly[k].expense) : '-'}
-          </div>
-        </div>
-      `).join('')}
-    </div>
-  `;
+  let rows = '';
+  keys.forEach(function(k, i) {
+    const bg = i%2===0 ? '#fff' : 'var(--bg)';
+    const incomeColor = monthly[k].income>0 ? 'var(--green)' : 'var(--text3)';
+    const expenseColor = monthly[k].expense>0 ? 'var(--red)' : 'var(--text3)';
+    const incomeStr = monthly[k].income>0 ? '+'+fmt(monthly[k].income) : '-';
+    const expenseStr = monthly[k].expense>0 ? '-'+fmt(monthly[k].expense) : '-';
+    rows += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:10px 14px;font-size:12px;border-top:1px solid var(--border);background:'+bg+'">'
+      + '<div style="font-weight:600;color:var(--text)">'+k+'</div>'
+      + '<div style="text-align:right;color:'+incomeColor+'">'+incomeStr+'</div>'
+      + '<div style="text-align:right;color:'+expenseColor+'">'+expenseStr+'</div>'
+      + '</div>';
+  });
+
+  el.innerHTML = '<div style="background:#fff;border-radius:10px;padding:14px;margin-bottom:8px;border:1px solid var(--border)">'
+    + '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">📊 전체 합계</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    + '<div style="background:var(--green-bg);border-radius:8px;padding:10px">'
+    + '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">총 받은 돈</div>'
+    + '<div style="font-size:15px;font-weight:700;color:var(--green)">+'+fmt(totalIncome)+'</div>'
+    + '</div>'
+    + '<div style="background:var(--red-bg);border-radius:8px;padding:10px">'
+    + '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">총 빌려준 돈</div>'
+    + '<div style="font-size:15px;font-weight:700;color:var(--red)">-'+fmt(totalExpense)+'</div>'
+    + '</div></div></div>'
+    + '<div style="background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--border)">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--bg3);padding:10px 14px;font-size:12px;font-weight:700;color:var(--text2)">'
+    + '<div>월</div><div style="text-align:right;color:var(--green)">받은 돈</div><div style="text-align:right;color:var(--red)">빌려준 돈</div>'
+    + '</div>' + rows + '</div>';
 }
 
 
