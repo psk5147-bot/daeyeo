@@ -141,7 +141,54 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto S
 
 
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
+const _fbConfig = {
+  apiKey: "AIzaSyBclsTr3p0xCs408WJI7xjpVqyXBUTh7HY",
+  authDomain: "daeyeo.firebaseapp.com",
+  projectId: "daeyeo",
+  storageBucket: "daeyeo.firebasestorage.app",
+  messagingSenderId: "45738759667",
+  appId: "1:45738759667:web:97629b12829c1693d52e86"
+};
+try {
+  if (!firebase.apps.length) firebase.initializeApp(_fbConfig);
+  const _db = firebase.firestore();
+  const _DOC = _db.collection('daeyeo').doc('data');
+
+  window.saveToCloud = async function(d) {
+    try {
+      await _DOC.set({
+        sangrok: JSON.stringify(d.sangrok),
+        updatedAt: new Date().toISOString()
+      });
+    } catch(e) { console.log('저장실패:', e); }
+  };
+
+  window.loadFromCloud = async function() {
+    try {
+      const snap = await _DOC.get();
+      if (snap.exists) {
+        const d = snap.data();
+        const sangrok = JSON.parse(d.sangrok || '[]');
+        if (sangrok.length > 0) return { sangrok };
+      }
+    } catch(e) { console.log('로드실패:', e); }
+    return null;
+  };
+
+  window.startSync = function(cb) {
+    _DOC.onSnapshot(function(snap) {
+      if (snap.exists) {
+        const d = snap.data();
+        const sangrok = JSON.parse(d.sangrok || '[]');
+        if (sangrok.length > 0) cb({ sangrok });
+      }
+    });
+  };
+} catch(e) { console.log('Firebase 초기화 실패:', e); }
+</script>
 const STORAGE_KEY = 'daeyeo_2026';
 let tab = 'sangrok';
 let inputType = 'in';
@@ -354,7 +401,6 @@ let inputTypeState = 'out';
 document.getElementById('todayDate').textContent = new Date().toLocaleDateString('ko-KR');
 
 function load() {
-  // 무조건 PRESET으로 시작
   data.sangrok = [...SANGROK_PRESET];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -365,10 +411,36 @@ function load() {
   } catch(e) {}
   setTodayDate();
   render();
+
+  if (window.loadFromCloud) {
+    setTimeout(async function() {
+      try {
+        const cd = await window.loadFromCloud();
+        if (cd && cd.sangrok && cd.sangrok.length > 0) {
+          data.sangrok = cd.sangrok;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          render();
+          toast('☁️ 동기화 완료');
+        } else {
+          if (window.saveToCloud) window.saveToCloud(data);
+        }
+      } catch(e) {}
+      if (window.startSync) {
+        window.startSync(function(cd) {
+          if (cd && cd.sangrok && cd.sangrok.length > 0) {
+            data.sangrok = cd.sangrok;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            render();
+          }
+        });
+      }
+    }, 800);
+  }
 }
 
 function save() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+  if (window.saveToCloud) window.saveToCloud(data);
 }
 
 function setTodayDate() {
