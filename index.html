@@ -405,45 +405,18 @@ function load() {
       const p = JSON.parse(raw);
       if (p.sangrok && p.sangrok.length > 0) data.sangrok = p.sangrok;
       else data.sangrok = SANGROK_PRESET;
-      if (p.yangsung && p.yangsung.length > 0) data.yangsung = p.yangsung;
-      else data.yangsung = YANGSUNG_PRESET;
     } else {
       data.sangrok = SANGROK_PRESET;
-      data.yangsung = YANGSUNG_PRESET;
     }
   } catch(e) {
     data.sangrok = SANGROK_PRESET;
-    data.yangsung = YANGSUNG_PRESET;
   }
   setTodayDate();
   render();
-
-  setTimeout(async () => {
-    try {
-      const cd = await window.loadFromCloud();
-      if (cd && cd.sangrok && cd.sangrok.length > 0) {
-        data = cd;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        render();
-        toast('☁️ 동기화 완료');
-      } else {
-        // 클라우드가 비어있으면 PRESET 저장
-        save();
-      }
-    } catch(e) {}
-    window.startSync((cd) => {
-      if (cd && cd.sangrok && cd.sangrok.length > 0) {
-        data = cd;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        render();
-      }
-    });
-  }, 500);
 }
 
 function save() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
-  if (window.saveToCloud) window.saveToCloud(data);
 }
 
 function setTodayDate() {
