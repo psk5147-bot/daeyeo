@@ -484,9 +484,14 @@ function render() {
     return (b.id||0) - (a.id||0);
   });
 
-  // 통계
+  // 통계 - 오름차순 정렬해서 마지막(최신) 잔액 가져오기
   const totalOut = data[tab].reduce((s,it) => s + Number(it.expense), 0);
-  const lastBalance = items.length > 0 ? Number(items[items.length-1].balance) : 0;
+  const sortedAsc = [...data[tab]].sort((a,b) => {
+    if (a.date < b.date) return -1;
+    if (a.date > b.date) return 1;
+    return (a.id||0) - (b.id||0);
+  });
+  const lastBalance = sortedAsc.length > 0 ? Number(sortedAsc[sortedAsc.length-1].balance) : 0;
   document.getElementById('totalOut').textContent = fmt(totalOut);
   document.getElementById('currentBalance').textContent = fmt(lastBalance);
 
