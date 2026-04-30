@@ -484,16 +484,24 @@ function renderMonthly() {
     const expenseColor = monthly[k].expense>0 ? 'var(--red)' : 'var(--text3)';
     const incomeStr = monthly[k].income>0 ? '+'+fmt(monthly[k].income) : '-';
     const expenseStr = monthly[k].expense>0 ? '-'+fmt(monthly[k].expense) : '-';
-    rows += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:10px 14px;font-size:12px;border-top:1px solid var(--border);background:'+bg+'">'
+    const diff = monthly[k].income - monthly[k].expense;
+    const diffColor = diff > 0 ? 'var(--green)' : diff < 0 ? 'var(--red)' : 'var(--text3)';
+    const diffStr = diff > 0 ? '+'+fmt(diff) : diff < 0 ? fmt(diff) : '0원';
+    rows += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:10px 14px;font-size:12px;border-top:1px solid var(--border);background:'+bg+'">'
       + '<div style="font-weight:600;color:var(--text)">'+k+'</div>'
       + '<div style="text-align:right;color:'+incomeColor+'">'+incomeStr+'</div>'
       + '<div style="text-align:right;color:'+expenseColor+'">'+expenseStr+'</div>'
+      + '<div style="text-align:right;color:'+diffColor+';font-weight:700">'+diffStr+'</div>'
       + '</div>';
   });
 
+  const totalDiff = totalIncome - totalExpense;
+  const totalDiffColor = totalDiff > 0 ? 'var(--green)' : totalDiff < 0 ? 'var(--red)' : 'var(--text3)';
+  const totalDiffStr = totalDiff > 0 ? '+'+fmt(totalDiff) : fmt(totalDiff);
+
   el.innerHTML = '<div style="background:#fff;border-radius:10px;padding:14px;margin-bottom:8px;border:1px solid var(--border)">'
     + '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">📊 전체 합계</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
     + '<div style="background:var(--green-bg);border-radius:8px;padding:10px">'
     + '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">총 받은 돈</div>'
     + '<div style="font-size:15px;font-weight:700;color:var(--green)">+'+fmt(totalIncome)+'</div>'
@@ -501,14 +509,20 @@ function renderMonthly() {
     + '<div style="background:var(--red-bg);border-radius:8px;padding:10px">'
     + '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">총 빌려준 돈</div>'
     + '<div style="font-size:15px;font-weight:700;color:var(--red)">-'+fmt(totalExpense)+'</div>'
-    + '</div></div></div>'
+    + '</div>'
+    + '<div style="background:var(--bg3);border-radius:8px;padding:10px">'
+    + '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">차액</div>'
+    + '<div style="font-size:15px;font-weight:700;color:'+totalDiffColor+'">'+totalDiffStr+'</div>'
+    + '</div>'
+    + '</div></div>'
     + '<div style="background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--border)">'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--bg3);padding:10px 14px;font-size:12px;font-weight:700;color:var(--text2)">'
-    + '<div>월</div><div style="text-align:right;color:var(--green)">받은 돈</div><div style="text-align:right;color:var(--red)">빌려준 돈</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;background:var(--bg3);padding:10px 14px;font-size:12px;font-weight:700;color:var(--text2)">'
+    + '<div>월</div><div style="text-align:right;color:var(--green)">받은 돈</div><div style="text-align:right;color:var(--red)">빌려준 돈</div><div style="text-align:right">차액</div>'
     + '</div>' + rows + '</div>';
 }
 
 
+function recalcBalances() {
   const sorted = [...data[tab]].sort((a,b) => {
     if (a.date < b.date) return -1;
     if (a.date > b.date) return 1;
@@ -551,22 +565,25 @@ function restoreData() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.json';
-  input.onchange = async (e) => {
+  input.onchange = function(e) {
     const file = e.target.files[0];
     if (!file) return;
     const pw = prompt('복원 비밀번호:');
     if (pw !== '0115') { toast('비밀번호가 틀렸어요'); return; }
-    const text = await file.text();
-    try {
-      const parsed = JSON.parse(text);
-      if (!parsed.sangrok || !parsed.yangsung) throw new Error();
-      data = parsed;
-      save();
-      render();
-      toast('📂 복원 완료!');
-    } catch(e) {
-      toast('올바른 백업 파일이 아니에요');
-    }
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        if (!parsed.sangrok) throw new Error();
+        data = parsed;
+        save();
+        render();
+        toast('📂 복원 완료!');
+      } catch(err) {
+        toast('올바른 백업 파일이 아니에요');
+      }
+    };
+    reader.readAsText(file);
   };
   input.click();
 }
