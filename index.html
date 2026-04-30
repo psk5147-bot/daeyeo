@@ -399,18 +399,15 @@ let inputTypeState = 'out';
 document.getElementById('todayDate').textContent = new Date().toLocaleDateString('ko-KR');
 
 function load() {
+  // 무조건 PRESET으로 시작
+  data.sangrok = [...SANGROK_PRESET];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const p = JSON.parse(raw);
       if (p.sangrok && p.sangrok.length > 0) data.sangrok = p.sangrok;
-      else data.sangrok = SANGROK_PRESET;
-    } else {
-      data.sangrok = SANGROK_PRESET;
     }
-  } catch(e) {
-    data.sangrok = SANGROK_PRESET;
-  }
+  } catch(e) {}
   setTodayDate();
   render();
 }
