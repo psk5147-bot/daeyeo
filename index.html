@@ -101,11 +101,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto S
     </div>
     <div class="tabs">
       <button class="tab active" onclick="setTab('sangrok')">상록</button>
-      <button class="tab" onclick="setTab('yangsung')">양성국</button>
+      <button class="tab" onclick="setTab('monthly')">월별 통계</button>
     </div>
   </div>
 
-  <div class="summary">
+  <div class="summary" id="summary">
     <div class="stat">
       <div class="stat-label">총 빌려준 금액</div>
       <div class="stat-val red" id="totalOut">-</div>
@@ -118,9 +118,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto S
 
   <div class="list-wrap">
     <div class="list" id="listEl"></div>
+    <div class="list" id="monthlyEl" style="display:none"></div>
   </div>
 
-  <div class="input-area">
+  <div class="input-area" id="inputArea">
     <div class="inp-row">
       <input class="inp" type="text" id="inpDesc" placeholder="내용 입력" style="flex:2">
       <input class="inp" type="date" id="inpDate" style="flex:1;min-width:0;color:var(--text)">
@@ -451,9 +452,14 @@ function setTodayDate() {
 function setTab(t) {
   tab = t;
   document.querySelectorAll('.tab').forEach((el,i) => {
-    el.classList.toggle('active', ['sangrok','yangsung'][i] === t);
+    el.classList.toggle('active', ['sangrok','monthly'][i] === t);
   });
-  render();
+  document.getElementById('listEl').style.display = t === 'monthly' ? 'none' : '';
+  document.getElementById('monthlyEl').style.display = t === 'monthly' ? '' : 'none';
+  document.getElementById('inputArea').style.display = t === 'monthly' ? 'none' : '';
+  document.getElementById('summary').style.display = t === 'monthly' ? 'none' : '';
+  if (t === 'monthly') renderMonthly();
+  else render();
 }
 
 function setType(t) {
@@ -532,7 +538,55 @@ function addItem() {
   toast('추가됐어요!');
 }
 
-function recalcBalances() {
+function renderMonthly() {
+  const monthly = {};
+  data.sangrok.forEach(it => {
+    const ym = it.date ? it.date.substring(0,7) : '기타';
+    if (!monthly[ym]) monthly[ym] = {income:0, expense:0};
+    monthly[ym].income += Number(it.income)||0;
+    monthly[ym].expense += Number(it.expense)||0;
+  });
+  const keys = Object.keys(monthly).sort().reverse();
+  const el = document.getElementById('monthlyEl');
+  if (!keys.length) { el.innerHTML = '<div class="empty">내역이 없습니다</div>'; return; }
+
+  let totalIncome = 0, totalExpense = 0;
+  keys.forEach(k => { totalIncome += monthly[k].income; totalExpense += monthly[k].expense; });
+
+  el.innerHTML = `
+    <div style="background:#fff;border-radius:10px;padding:14px;margin-bottom:8px;border:1px solid var(--border)">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">📊 전체 합계</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--green-bg);border-radius:8px;padding:10px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:3px">총 받은 돈</div>
+          <div style="font-size:15px;font-weight:700;color:var(--green)">+${fmt(totalIncome)}</div>
+        </div>
+        <div style="background:var(--red-bg);border-radius:8px;padding:10px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:3px">총 빌려준 돈</div>
+          <div style="font-size:15px;font-weight:700;color:var(--red)">-${fmt(totalExpense)}</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--bg3);padding:10px 14px;font-size:12px;font-weight:700;color:var(--text2)">
+        <div>월</div><div style="text-align:right;color:var(--green)">받은 돈</div><div style="text-align:right;color:var(--red)">빌려준 돈</div>
+      </div>
+      ${keys.map((k,i) => `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:10px 14px;font-size:12px;border-top:1px solid var(--border);background:${i%2===0?'#fff':'var(--bg)'}">
+          <div style="font-weight:600;color:var(--text)">${k}</div>
+          <div style="text-align:right;color:${monthly[k].income>0?'var(--green)':'var(--text3)'}">
+            ${monthly[k].income > 0 ? '+'+fmt(monthly[k].income) : '-'}
+          </div>
+          <div style="text-align:right;color:${monthly[k].expense>0?'var(--red)':'var(--text3)'}">
+            ${monthly[k].expense > 0 ? '-'+fmt(monthly[k].expense) : '-'}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+
   const sorted = [...data[tab]].sort((a,b) => {
     if (a.date < b.date) return -1;
     if (a.date > b.date) return 1;
